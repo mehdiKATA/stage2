@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudyHub — Matières</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button class="menu-toggle" id="menu-toggle">☰</button>
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="global-search" placeholder="Rechercher..." autocomplete="off" />
+        <div class="search-results hidden" id="search-results"></div>
+      </div>
+      <div class="topbar-actions">
+        <button class="topbar-btn" id="btn-notif" title="Notifications" style="position:relative">
+          🔔
+          <span id="notif-badge" style="
+            display:none; position:absolute; top:-4px; right:-4px;
+            background:var(--danger); color:#fff; border-radius:50%;
+            width:18px; height:18px; font-size:.62rem; font-weight:800;
+            align-items:center; justify-content:center; pointer-events:none;
+          "></span>
+        </button>
+        <a href="index.html" class="topbar-btn" title="Accueil">🏠</a>
+        <button class="topbar-btn" onclick="window.location='profile.html'">👤</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div class="breadcrumb">
+          <a href="index.html">🏠 Accueil</a> › <span id="bc-year">Niveau</span>
+        </div>
+        <h1 id="page-title">Matières</h1>
+        <p id="page-desc">Sélectionnez une matière pour accéder aux cours.</p>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <input type="text" class="form-input" id="subject-filter"
+          placeholder="🔍 Filtrer les matières..." style="max-width:320px;border-radius:50px" />
+      </div>
+
+      <div class="cards-grid-2" id="subjects-grid"></div>
+    </main>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!AppController.requireAuth()) return;
+
+  const { year } = AppController.getParams();
+  if (!year) { window.location.href = 'index.html'; return; }
+
+  // ── Subscription guard ──
+  if (!SubManager.hasYear(year)) {
+    AppController.toast('🔒 Ce niveau nécessite un abonnement.', 'warn', 3000);
+    setTimeout(() => window.location.href = 'pricing.html', 800);
+    return;
+  }
+
+  // ── Load year info from API ──
+  const yearRes = await Api.getYear(year);
+  const yearData = yearRes.data;
+  document.getElementById('bc-year').textContent  = yearData?.label || 'Niveau';
+  document.getElementById('page-title').innerHTML = `${yearData?.icon || '📂'} ${yearData?.label || 'Matières'}`;
+  document.getElementById('page-desc').textContent = yearData?.description || '';
+
+  // ── Load subjects ──
+  const container = document.getElementById('subjects-grid');
+  container.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+
+  const res = await Api.getSubjects(year);
+  if (!res.ok) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><h3>${res.message}</h3></div>`;
+    return;
+  }
+  if (!res.data.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><h3>Aucune matière disponible</h3></div>`;
+    return;
+  }
+
+  container.innerHTML = res.data.map(s => `
+    <div class="subject-card" onclick="AppController.goSubject('${s.id}', ${year})">
+      <div class="subj-icon" style="background:${s.color}22;color:${s.color}">${s.icon}</div>
+      <div class="subj-body">
+        <div class="subj-name">${s.name}</div>
+        <div class="subj-meta">${s.video_count || 0} vidéos · ${s.doc_count || 0} documents</div>
+      </div>
+      <span class="subj-arrow">→</span>
+    </div>`).join('');
+
+  // Live filter
+  document.getElementById('subject-filter').addEventListener('input', function () {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.subject-card').forEach(card => {
+      const name = card.querySelector('.subj-name')?.textContent.toLowerCase() || '';
+      card.style.display = name.includes(q) ? '' : 'none';
+    });
+  });
+});
+</script>
+</body>
+</html>

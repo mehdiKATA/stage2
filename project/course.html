@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudyHub — Cours</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button class="menu-toggle" id="menu-toggle">☰</button>
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="global-search" placeholder="Rechercher..." autocomplete="off" />
+        <div class="search-results hidden" id="search-results"></div>
+      </div>
+      <div class="topbar-actions">
+        <a href="index.html" class="topbar-btn">🏠</a>
+        <button class="topbar-btn" onclick="window.location='profile.html'">👤</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div class="breadcrumb">
+          <a href="index.html">🏠 Accueil</a> ›
+          <a href="#" id="bc-year">Niveau</a> ›
+          <span id="bc-subject">Matière</span>
+        </div>
+        <h1 id="course-title">Cours</h1>
+      </div>
+
+      <div class="course-layout">
+        <!-- Left: Player + Info -->
+        <div>
+          <div class="video-player-wrap">
+            <div class="video-placeholder" id="video-player">
+              <div class="play-big">▶️</div>
+              <p>Sélectionnez une vidéo pour commencer</p>
+            </div>
+          </div>
+          <div class="course-info">
+            <h2 id="video-title">Titre de la vidéo</h2>
+            <p id="video-id" class="text-muted"></p>
+          </div>
+        </div>
+
+        <!-- Right: Playlist Panel -->
+        <div class="playlist-panel">
+          <div class="playlist-header">
+            📋 Contenu du cours
+          </div>
+          <div class="playlist-tabs">
+            <div class="playlist-tab active" id="tab-videos">🎬 Vidéos</div>
+            <div class="playlist-tab" id="tab-docs">📄 Documents</div>
+          </div>
+          <div class="playlist-list">
+            <div id="video-list"></div>
+            <div id="doc-list" class="hidden"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/course.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudyHub — Connexion</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="auth-page">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="logo-icon">S</div>
+      <span>Study<em>Hub</em></span>
+    </div>
+    <h2 class="auth-title">Bon retour ! 👋</h2>
+    <p class="auth-sub">Connectez-vous pour accéder à vos cours.</p>
+
+    <div class="form-group">
+      <label class="form-label">Adresse email</label>
+      <input type="email" class="form-input" id="login-email" placeholder="vous@exemple.com" />
+      <span class="form-error hidden" id="err-email"></span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mot de passe</label>
+      <input type="password" class="form-input" id="login-password" placeholder="••••••••" />
+      <span class="form-error hidden" id="err-password"></span>
+    </div>
+    <div style="background:var(--accent-dim);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:10px 14px;font-size:.82rem;margin-bottom:16px;color:var(--text2)">
+      💡 <strong style="color:var(--accent)">Admin demo :</strong> admin@platform.com / admin123
+    </div>
+    <button class="btn btn-primary w-full" id="btn-login" style="border-radius:10px;justify-content:center;padding:14px">
+      Se connecter
+    </button>
+    <div class="auth-alt">Pas encore de compte ? <a href="signup.html">Créer un compte</a></div>
+    <div class="auth-alt" style="margin-top:8px"><a href="index.html" style="color:var(--text3)">← Retour à l'accueil</a></div>
+  </div>
+</div>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (AuthController.currentUser()) {
+    window.location.href = sessionStorage.getItem('redirect') || 'index.html';
+    return;
+  }
+  document.getElementById('btn-login').addEventListener('click', async () => {
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    ['err-email','err-password'].forEach(id => {
+      document.getElementById(id).textContent = '';
+      document.getElementById(id).classList.add('hidden');
+    });
+    if (!email) { showErr('err-email', 'Email requis.'); return; }
+    if (!password) { showErr('err-password', 'Mot de passe requis.'); return; }
+
+    document.getElementById('btn-login').textContent = 'Connexion...';
+    const result = await AuthController.login(email, password);
+    document.getElementById('btn-login').textContent = 'Se connecter';
+
+    if (!result.ok) { showErr('err-email', result.message); AppController.toast(result.message, 'error'); return; }
+    AppController.toast(`Bienvenue, ${result.data.username} ! 🎉`, 'success');
+    setTimeout(() => {
+      const redirect = sessionStorage.getItem('redirect') || 'index.html';
+      sessionStorage.removeItem('redirect');
+      window.location.href = redirect;
+    }, 700);
+  });
+  document.getElementById('login-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btn-login').click();
+  });
+  function showErr(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg; el.classList.remove('hidden');
+  }
+});
+</script>
+</body>
+</html>

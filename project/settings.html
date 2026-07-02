@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudyHub — Paramètres</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .settings-layout { display:grid; grid-template-columns:220px 1fr; gap:24px; align-items:start; }
+    .settings-nav { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; position:sticky; top:90px; }
+    .settings-nav-item { display:flex; align-items:center; gap:12px; padding:14px 18px; cursor:pointer; transition:var(--transition); font-size:.9rem; font-weight:500; color:var(--text2); border-bottom:1px solid var(--border); position:relative; }
+    .settings-nav-item:last-child { border-bottom:none; }
+    .settings-nav-item:hover { background:var(--surface); color:var(--text); }
+    .settings-nav-item.active { background:var(--accent-dim); color:var(--accent); }
+    .settings-nav-item.active::before { content:''; position:absolute; left:0; height:100%; width:3px; background:var(--accent); }
+    .settings-section { display:none; }
+    .settings-section.active { display:block; }
+    .settings-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:28px; margin-bottom:20px; }
+    .settings-card h3 { margin-bottom:6px; }
+    .settings-card .card-desc { font-size:.85rem; color:var(--text2); margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+    .input-with-icon { position:relative; }
+    .input-with-icon .form-input { padding-right:44px; }
+    .input-with-icon .toggle-pass { position:absolute; right:14px; top:50%; transform:translateY(-50%); cursor:pointer; color:var(--text3); }
+    .toggle-pass:hover { color:var(--text); }
+
+    /* Toggle switch */
+    .notif-row { display:flex; align-items:center; justify-content:space-between; padding:16px 0; border-bottom:1px solid var(--border); }
+    .notif-row:last-child { border-bottom:none; }
+    .notif-label { font-size:.9rem; display:flex; align-items:center; gap:10px; }
+    .toggle-wrap { position:relative; width:46px; height:26px; flex-shrink:0; cursor:pointer; }
+    .toggle-wrap input { opacity:0; width:0; height:0; position:absolute; }
+    .toggle-track {
+      position:absolute; inset:0;
+      background:var(--border); border-radius:99px;
+      transition:background .25s;
+    }
+    .toggle-wrap input:checked + .toggle-track { background:var(--accent); }
+    .toggle-knob {
+      position:absolute; top:3px; left:3px;
+      width:20px; height:20px;
+      background:#fff; border-radius:50%;
+      transition:transform .25s;
+      pointer-events:none;
+    }
+    .toggle-wrap input:checked ~ .toggle-knob { transform:translateX(20px); }
+
+    @media(max-width:768px) { .settings-layout { grid-template-columns:1fr; } .settings-nav { position:static; } }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button class="menu-toggle" id="menu-toggle">☰</button>
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="global-search" placeholder="Rechercher..." autocomplete="off" />
+        <div class="search-results hidden" id="search-results"></div>
+      </div>
+      <div class="topbar-actions">
+        <button class="topbar-btn" id="btn-notif" title="Notifications" style="position:relative">
+          🔔
+          <span id="notif-badge" style="
+            display:none; position:absolute; top:-4px; right:-4px;
+            background:var(--danger); color:#fff; border-radius:50%;
+            width:18px; height:18px; font-size:.62rem; font-weight:800;
+            align-items:center; justify-content:center; pointer-events:none;
+          "></span>
+        </button>
+        <a href="profile.html" class="topbar-btn">👤</a>
+        <button class="topbar-btn" onclick="AppController.logout()">🚪</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div class="breadcrumb"><a href="index.html">🏠 Accueil</a> › Paramètres</div>
+        <h1>⚙️ Paramètres du compte</h1>
+        <p>Gérez vos informations personnelles et la sécurité de votre compte.</p>
+      </div>
+
+      <div class="settings-layout">
+
+        <!-- ── Left Nav ── -->
+        <nav class="settings-nav">
+          <div class="settings-nav-item active" onclick="showSection('profile', this)">
+            <span>👤</span> Profil
+          </div>
+          <div class="settings-nav-item" onclick="showSection('security', this)">
+            <span>🔒</span> Sécurité
+          </div>
+          <div class="settings-nav-item" onclick="showSection('notifications', this)">
+            <span>🔔</span> Notifications
+          </div>
+        </nav>
+
+        <!-- ── Right Content ── -->
+        <div>
+
+          <!-- SECTION: Profil -->
+          <div class="settings-section active" id="section-profile">
+            <div class="settings-card">
+              <h3>Informations personnelles</h3>
+              <p class="card-desc">Modifiez votre nom d'utilisateur et votre adresse email.</p>
+
+              <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px">
+                <div id="avatar-preview" style="width:72px;height:72px;border-radius:50%;background:var(--accent);display:grid;place-items:center;font-size:2rem;font-weight:800;color:var(--bg)">?</div>
+                <div>
+                  <div style="font-weight:700;margin-bottom:4px" id="avatar-name-preview">—</div>
+                  <div style="font-size:.82rem;color:var(--text3)">Avatar généré depuis votre prénom.</div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Nom d'utilisateur</label>
+                <input type="text" class="form-input" id="s-username" placeholder="Votre nom" />
+                <span class="form-error hidden" id="err-uname"></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Adresse email</label>
+                <input type="email" class="form-input" id="s-email" placeholder="vous@exemple.com" />
+                <span class="form-error hidden" id="err-email"></span>
+              </div>
+              <button class="btn btn-primary" id="btn-save-profile" onclick="SettingsController.saveProfile()">
+                💾 Sauvegarder
+              </button>
+            </div>
+          </div>
+
+          <!-- SECTION: Sécurité -->
+          <div class="settings-section" id="section-security">
+            <div class="settings-card">
+              <h3>Changer le mot de passe</h3>
+              <p class="card-desc">Utilisez un mot de passe fort d'au moins 6 caractères.</p>
+
+              <div class="form-group">
+                <label class="form-label">Mot de passe actuel</label>
+                <div class="input-with-icon">
+                  <input type="password" class="form-input" id="s-old-pass" placeholder="••••••••" />
+                  <span class="toggle-pass" onclick="togglePass('s-old-pass', this)">👁</span>
+                </div>
+                <span class="form-error hidden" id="err-old-pass"></span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Nouveau mot de passe</label>
+                <div class="input-with-icon">
+                  <input type="password" class="form-input" id="s-new-pass" placeholder="Minimum 6 caractères"
+                         oninput="SettingsController.updateStrength(this.value)" />
+                  <span class="toggle-pass" onclick="togglePass('s-new-pass', this)">👁</span>
+                </div>
+                <div id="pass-strength" style="margin-top:8px;display:none">
+                  <div style="height:4px;border-radius:99px;background:var(--bg3);overflow:hidden;margin-bottom:4px">
+                    <div id="strength-bar" style="height:100%;border-radius:99px;width:0;transition:all .3s"></div>
+                  </div>
+                  <span id="strength-label" style="font-size:.75rem"></span>
+                </div>
+                <span class="form-error hidden" id="err-new-pass"></span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Confirmer le nouveau mot de passe</label>
+                <div class="input-with-icon">
+                  <input type="password" class="form-input" id="s-confirm-pass" placeholder="••••••••" />
+                  <span class="toggle-pass" onclick="togglePass('s-confirm-pass', this)">👁</span>
+                </div>
+                <span class="form-error hidden" id="err-confirm-pass"></span>
+              </div>
+
+              <button class="btn btn-primary" id="btn-save-pass" onclick="SettingsController.changePassword()">
+                🔒 Mettre à jour le mot de passe
+              </button>
+            </div>
+          </div>
+
+          <!-- SECTION: Notifications -->
+          <div class="settings-section" id="section-notifications">
+            <div class="settings-card">
+              <h3>Préférences de notifications</h3>
+              <p class="card-desc">Activez ou désactivez les notifications en temps réel.</p>
+
+              <!-- Vidéo terminée -->
+              <div class="notif-row">
+                <div class="notif-label">
+                  <span style="font-size:1.3rem">🎬</span>
+                  <div>
+                    <div style="font-weight:600">Vidéo terminée</div>
+                    <div style="font-size:.78rem;color:var(--text3)">Notification quand vous finissez une vidéo</div>
+                  </div>
+                </div>
+                <label class="toggle-wrap">
+                  <input type="checkbox" id="n-video-end" />
+                  <span class="toggle-track"></span>
+                  <span class="toggle-knob"></span>
+                </label>
+              </div>
+
+              <!-- Succès débloqué -->
+              <div class="notif-row">
+                <div class="notif-label">
+                  <span style="font-size:1.3rem">🏆</span>
+                  <div>
+                    <div style="font-weight:600">Succès débloqué</div>
+                    <div style="font-size:.78rem;color:var(--text3)">Notification quand vous débloquez un succès</div>
+                  </div>
+                </div>
+                <label class="toggle-wrap">
+                  <input type="checkbox" id="n-achievement" />
+                  <span class="toggle-track"></span>
+                  <span class="toggle-knob"></span>
+                </label>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+
+function showSection(name, el) {
+  document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.settings-nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+function togglePass(id, btn) {
+  const input = document.getElementById(id);
+  input.type = input.type === 'password' ? 'text' : 'password';
+  btn.textContent = input.type === 'password' ? '👁' : '🙈';
+}
+
+const SettingsController = {
+
+  init() {
+    const user = AuthController.currentUser();
+    if (!user) { window.location.href = 'login.html'; return; }
+
+    // Pre-fill profile
+    document.getElementById('s-username').value = user.username;
+    document.getElementById('s-email').value    = user.email;
+    document.getElementById('avatar-preview').textContent      = user.username[0].toUpperCase();
+    document.getElementById('avatar-name-preview').textContent = user.username;
+
+    // Live avatar preview
+    document.getElementById('s-username').addEventListener('input', function () {
+      const v = this.value.trim();
+      document.getElementById('avatar-preview').textContent      = v ? v[0].toUpperCase() : '?';
+      document.getElementById('avatar-name-preview').textContent = v || '—';
+    });
+
+    // Load saved notification prefs
+    this._loadNotifPrefs();
+
+    // Auto-save on toggle change
+    document.getElementById('n-video-end').addEventListener('change',   () => this._saveNotifPrefs());
+    document.getElementById('n-achievement').addEventListener('change', () => this._saveNotifPrefs());
+  },
+
+  // ── Profile ──
+  async saveProfile() {
+    const username = document.getElementById('s-username').value.trim();
+    const email    = document.getElementById('s-email').value.trim();
+
+    ['err-uname', 'err-email'].forEach(id => {
+      const el = document.getElementById(id);
+      el.textContent = ''; el.classList.add('hidden');
+    });
+    document.getElementById('s-username').classList.remove('error');
+    document.getElementById('s-email').classList.remove('error');
+
+    if (!username || username.length < 2) { this._err('err-uname', 's-username', 'Nom requis (2 car. min).'); return; }
+    if (!email || !email.includes('@'))   { this._err('err-email',  's-email',    'Email invalide.'); return; }
+
+    const btn = document.getElementById('btn-save-profile');
+    btn.disabled = true; btn.textContent = '⏳ Enregistrement...';
+
+    const res = await Api.updateProfile(username, email);
+    btn.disabled = false; btn.textContent = '💾 Sauvegarder';
+
+    if (!res.ok) {
+      this._err('err-email', 's-email', res.message || 'Erreur serveur.');
+      return;
+    }
+
+    // Update local cache
+    const user = AuthController.currentUser();
+    user.username = username;
+    user.email    = email;
+    localStorage.setItem('studyhub_user', JSON.stringify(user));
+    AppController.renderSidebar();
+    AppController.toast('✅ Profil mis à jour !', 'success');
+  },
+
+  // ── Password strength meter ──
+  updateStrength(p) {
+    let s = 0;
+    if (p.length >= 8) s++; if (/[A-Z]/.test(p)) s++;
+    if (/[0-9]/.test(p)) s++; if (/[^A-Za-z0-9]/.test(p)) s++;
+    const wrap  = document.getElementById('pass-strength');
+    const bar   = document.getElementById('strength-bar');
+    const label = document.getElementById('strength-label');
+    wrap.style.display = p ? 'block' : 'none';
+    const levels = [
+      { w: '25%',  c: 'var(--danger)',  t: 'Très faible' },
+      { w: '50%',  c: '#f97316',        t: 'Faible'      },
+      { w: '75%',  c: 'var(--accent)',  t: 'Moyen'       },
+      { w: '100%', c: 'var(--success)', t: 'Fort'        },
+    ];
+    const l = levels[Math.min(Math.max(s - 1, 0), 3)];
+    bar.style.width = l.w; bar.style.background = l.c;
+    label.textContent = l.t; label.style.color = l.c;
+  },
+
+  // ── Password change ──
+  async changePassword() {
+    const oldP = document.getElementById('s-old-pass').value;
+    const newP = document.getElementById('s-new-pass').value;
+    const conP = document.getElementById('s-confirm-pass').value;
+
+    ['err-old-pass', 'err-new-pass', 'err-confirm-pass'].forEach(id => {
+      const el = document.getElementById(id);
+      el.textContent = ''; el.classList.add('hidden');
+    });
+
+    if (!oldP)           { this._err('err-old-pass',     's-old-pass',     'Requis.'); return; }
+    if (newP.length < 6) { this._err('err-new-pass',     's-new-pass',     'Minimum 6 caractères.'); return; }
+    if (newP !== conP)   { this._err('err-confirm-pass', 's-confirm-pass', 'Les mots de passe ne correspondent pas.'); return; }
+
+    const btn = document.getElementById('btn-save-pass');
+    btn.disabled = true; btn.textContent = '⏳...';
+
+    const res = await Api.changePassword(oldP, newP);
+    btn.disabled = false; btn.textContent = '🔒 Mettre à jour le mot de passe';
+
+    if (!res.ok) {
+      this._err('err-old-pass', 's-old-pass', res.message || 'Mot de passe actuel incorrect.');
+      return;
+    }
+
+    ['s-old-pass', 's-new-pass', 's-confirm-pass'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('pass-strength').style.display = 'none';
+    AppController.toast('✅ Mot de passe mis à jour !', 'success');
+  },
+
+  // ── Notification prefs (auto-save on toggle) ──
+  _loadNotifPrefs() {
+    const saved = JSON.parse(localStorage.getItem('studyhub_notifs') || '{}');
+    // Default: both ON
+    document.getElementById('n-video-end').checked   = saved['n-video-end']   !== false;
+    document.getElementById('n-achievement').checked = saved['n-achievement'] !== false;
+  },
+
+  _saveNotifPrefs() {
+    const prefs = {
+      'n-video-end':   document.getElementById('n-video-end').checked,
+      'n-achievement': document.getElementById('n-achievement').checked,
+    };
+    localStorage.setItem('studyhub_notifs', JSON.stringify(prefs));
+    // Subtle feedback
+    AppController.toast('Préférences mises à jour.', 'info', 1500);
+  },
+
+  _err(errId, inputId, msg) {
+    const el = document.getElementById(errId);
+    if (el) { el.textContent = msg; el.classList.remove('hidden'); }
+    document.getElementById(inputId)?.classList.add('error');
+  },
+};
+
+document.addEventListener('DOMContentLoaded', () => SettingsController.init());
+</script>
+</body>
+</html>

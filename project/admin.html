@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudyHub — Admin</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .active-filter { background: var(--accent-dim) !important; color: var(--accent) !important; border-color: var(--accent) !important; }
+    #content-filter-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+    .icon-option:hover { border-color: var(--accent) !important; background: var(--accent-dim); }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<!-- Modal -->
+<div class="modal-overlay hidden" id="modal-add">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-height:90vh;overflow-y:auto">
+    <div class="modal-header">
+      <h3 id="modal-title">Ajouter</h3>
+      <button class="modal-close" onclick="AdminController.closeModal()">✕</button>
+    </div>
+    <div id="modal-form"></div>
+  </div>
+</div>
+<div id="modal-overlay-bg" onclick="AdminController.closeModal()"
+     style="position:fixed;inset:0;z-index:399;display:none"></div>
+
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button class="menu-toggle" id="menu-toggle">☰</button>
+      <h2 style="font-size:1rem;font-family:'Sora',sans-serif">⚙️ Panneau d'administration</h2>
+      <div class="topbar-actions">
+        <a href="index.html" class="topbar-btn">🏠</a>
+        <button class="topbar-btn" onclick="AppController.logout()">🚪</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div class="breadcrumb"><a href="index.html">🏠 Accueil</a> › Administration</div>
+        <h1>Tableau de bord Admin</h1>
+        <p>Gérez les utilisateurs et le contenu de la plateforme.</p>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-label">Utilisateurs</div><div class="stat-value" id="admin-users">—</div></div>
+        <div class="stat-card"><div class="stat-label">Matières</div><div class="stat-value" id="admin-subjects">—</div></div>
+        <div class="stat-card"><div class="stat-label">Vidéos</div><div class="stat-value" id="admin-videos">—</div></div>
+        <div class="stat-card"><div class="stat-label">Documents</div><div class="stat-value" id="admin-docs">—</div></div>
+      </div>
+
+      <!-- Users -->
+      <div style="margin-bottom:32px">
+        <div class="section-title"><h2>👥 Gestion des utilisateurs</h2></div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Nom</th><th>Email</th><th>Rôle</th><th>Activité</th><th>Inscrit le</th><th>Actions</th></tr></thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div>
+        <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <h2>📚 Gestion du contenu</h2>
+          <button class="btn btn-primary btn-sm" onclick="AdminController.openAddSubject()"
+                  style="border-radius:8px">
+            ➕ Nouvelle matière
+          </button>
+        </div>
+
+        <!-- Filter by year -->
+        <div id="content-filter-bar"></div>
+
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>Matière</th><th>Niveau</th><th>Vidéos</th><th>Documents</th><th>Actions</th></tr></thead>
+            <tbody id="content-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

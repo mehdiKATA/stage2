@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudyHub — Inscription</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="auth-page">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="logo-icon">S</div>
+      <span>Study<em>Hub</em></span>
+    </div>
+    <h2 class="auth-title">Créer un compte ✨</h2>
+    <p class="auth-sub">Rejoignez des milliers d'étudiants sur StudyHub.</p>
+    <div class="form-group">
+      <label class="form-label">Nom d'utilisateur</label>
+      <input type="text" class="form-input" id="s-username" placeholder="Votre prénom ou pseudo" />
+      <span class="form-error hidden" id="err-username"></span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Adresse email</label>
+      <input type="email" class="form-input" id="s-email" placeholder="vous@exemple.com" />
+      <span class="form-error hidden" id="err-email"></span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mot de passe</label>
+      <input type="password" class="form-input" id="s-password" placeholder="Minimum 6 caractères" />
+      <span class="form-error hidden" id="err-password"></span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Confirmer le mot de passe</label>
+      <input type="password" class="form-input" id="s-confirm" placeholder="••••••••" />
+      <span class="form-error hidden" id="err-confirm"></span>
+    </div>
+    <button class="btn btn-primary w-full" id="btn-signup" style="border-radius:10px;justify-content:center;padding:14px">
+      Créer mon compte
+    </button>
+    <div class="auth-alt">Déjà inscrit ? <a href="login.html">Se connecter</a></div>
+    <div class="auth-alt" style="margin-top:8px"><a href="index.html" style="color:var(--text3)">← Retour à l'accueil</a></div>
+  </div>
+</div>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (AuthController.currentUser()) { window.location.href = 'index.html'; return; }
+  document.getElementById('btn-signup').addEventListener('click', async () => {
+    const username = document.getElementById('s-username').value.trim();
+    const email    = document.getElementById('s-email').value.trim();
+    const password = document.getElementById('s-password').value;
+    const confirm  = document.getElementById('s-confirm').value;
+    let valid = true;
+    ['err-username','err-email','err-password','err-confirm'].forEach(id => {
+      document.getElementById(id).textContent = ''; document.getElementById(id).classList.add('hidden');
+    });
+    if (!username) { err('err-username','s-username','Nom requis.'); valid=false; }
+    if (!email || !email.includes('@')) { err('err-email','s-email','Email invalide.'); valid=false; }
+    if (password.length < 6) { err('err-password','s-password','Minimum 6 caractères.'); valid=false; }
+    if (password !== confirm) { err('err-confirm','s-confirm','Mots de passe différents.'); valid=false; }
+    if (!valid) return;
+    document.getElementById('btn-signup').textContent = 'Création...';
+    const result = await AuthController.signup(username, email, password);
+    document.getElementById('btn-signup').textContent = 'Créer mon compte';
+    if (!result.ok) { err('err-email','s-email', result.message); return; }
+    AppController.toast('Compte créé ! 🎉', 'success');
+    setTimeout(() => window.location.href = 'index.html', 800);
+  });
+  function err(errId, inputId, msg) {
+    const el = document.getElementById(errId);
+    el.textContent = msg; el.classList.remove('hidden');
+    document.getElementById(inputId)?.classList.add('error');
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudyHub — Mon Profil</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Year group dans la progression */
+    .year-group { margin-bottom: 28px; }
+    .year-group-title {
+      display: flex; align-items: center; gap: 10px;
+      font-family: 'Sora', sans-serif; font-size: .85rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em;
+      color: var(--text3); margin-bottom: 14px;
+      padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    }
+    .year-group-title .yg-badge {
+      background: var(--accent-dim); color: var(--accent);
+      padding: 2px 10px; border-radius: 50px; font-size: .72rem;
+    }
+    /* Tabs de navigation dans le profil */
+    .profile-tabs {
+      display: flex; gap: 4px;
+      background: var(--bg3); border-radius: 12px; padding: 5px;
+      margin-bottom: 24px;
+    }
+    .profile-tab {
+      flex: 1; padding: 10px 16px; border-radius: 8px;
+      font-size: .88rem; font-weight: 600; color: var(--text2);
+      cursor: pointer; transition: var(--transition); text-align: center;
+    }
+    .profile-tab.active { background: var(--bg2); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    .profile-tab:hover:not(.active) { color: var(--text); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button class="menu-toggle" id="menu-toggle">☰</button>
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="global-search" placeholder="Rechercher..." autocomplete="off" />
+        <div class="search-results hidden" id="search-results"></div>
+      </div>
+      <div class="topbar-actions">
+        <a href="index.html" class="topbar-btn">🏠</a>
+        <a href="settings.html" class="topbar-btn" title="Paramètres">⚙️</a>
+        <button class="topbar-btn" onclick="AppController.logout()">🚪</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div class="breadcrumb"><a href="index.html">🏠 Accueil</a> › Profil</div>
+        <h1>Mon Profil</h1>
+      </div>
+
+      <div class="profile-layout">
+
+        <!-- ── Left Card ── -->
+        <div class="profile-card">
+          <div class="profile-avatar" id="p-avatar">?</div>
+          <h3 id="p-name">Chargement...</h3>
+          <div class="role-badge" id="p-role">Étudiant</div>
+          <div class="profile-stat"><span>Email</span><strong id="p-email" style="font-size:.8rem;word-break:break-all">—</strong></div>
+          <div class="profile-stat"><span>Inscrit le</span><strong id="p-date">—</strong></div>
+          <div class="profile-stat"><span>Vidéos vues</span><strong id="p-watched">0</strong></div>
+          <div class="profile-stat"><span>Matières suivies</span><strong id="p-subjects">0</strong></div>
+          <div style="margin-top:20px;display:flex;flex-direction:column;gap:8px">
+            <a href="settings.html" class="btn btn-outline w-full" style="border-radius:10px;justify-content:center">
+              ⚙️ Paramètres
+            </a>
+            <button class="btn btn-ghost w-full" style="border-radius:10px;justify-content:center" onclick="AppController.logout()">
+              🚪 Déconnexion
+            </button>
+          </div>
+        </div>
+
+        <!-- ── Right Content ── -->
+        <div>
+          <!-- Navigation tabs -->
+          <div class="profile-tabs">
+            <div class="profile-tab active" onclick="switchTab('progress')">📊 Progression</div>
+            <div class="profile-tab" onclick="switchTab('achievements')">🏆 Succès</div>
+            <div class="profile-tab" onclick="switchTab('activity')">🎬 Activité</div>
+          </div>
+
+          <!-- TAB: Progression groupée par année -->
+          <div class="tab-panel active" id="tab-progress">
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
+              <div id="progress-list"></div>
+            </div>
+          </div>
+
+          <!-- TAB: Achievements -->
+          <div class="tab-panel" id="tab-achievements">
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
+              <div class="achievements-grid" id="achievements-grid"></div>
+            </div>
+          </div>
+
+          <!-- TAB: Activité récente -->
+          <div class="tab-panel" id="tab-activity">
+            <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
+              <div id="recent-activity"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+/* ── Tab switcher ── */
+function switchTab(name) {
+  document.querySelectorAll('.profile-tab').forEach((t, i) => {
+    const names = ['progress','achievements','activity'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+/* ── Achievements definition ── */
+const ACHIEVEMENTS = [
+  { id:'first-video',  icon:'🎬', name:'Première leçon',    desc:'Regardez votre 1ère vidéo',     condition: u => (u.watchedVideos?.length||0) >= 1 },
+  { id:'five-videos',  icon:'🔥', name:'5 vidéos vues',     desc:'Regardez 5 vidéos',              condition: u => (u.watchedVideos?.length||0) >= 5 },
+  { id:'ten-videos',   icon:'⚡', name:'10 vidéos vues',    desc:'Regardez 10 vidéos',             condition: u => (u.watchedVideos?.length||0) >= 10 },
+  { id:'explorer',     icon:'🗺️', name:'Explorateur',       desc:'Suivez 2 matières différentes',  condition: u => Object.keys(u.progress||{}).length >= 2 },
+  { id:'dedicated',    icon:'🏅', name:'Assidu',            desc:'Progressez dans une matière',    condition: u => Object.values(u.progress||{}).some(v => v > 0) },
+  { id:'bac-prep',     icon:'🎓', name:'Candidat Bac',      desc:'Accédez à une matière Bac',      condition: u => Object.keys(u.progress||{}).some(k => k.startsWith('s4')) },
+  { id:'all-years',    icon:'🌟', name:'Tous niveaux',      desc:'Visitez les 4 niveaux',          condition: u => Object.keys(u.progress||{}).some(k=>k.startsWith('s1')) && Object.keys(u.progress||{}).some(k=>k.startsWith('s4')) },
+];
+
+document.addEventListener('DOMContentLoaded', () => {
+  const user = AuthController.currentUser();
+  if (!user) { window.location.href = 'login.html'; return; }
+
+  /* ── Profile card ── */
+  document.getElementById('p-avatar').textContent   = user.username[0].toUpperCase();
+  document.getElementById('p-name').textContent     = user.username;
+  document.getElementById('p-role').textContent     = user.role === 'admin' ? '👑 Administrateur' : '🎓 Étudiant';
+  document.getElementById('p-email').textContent    = user.email;
+  document.getElementById('p-date').textContent     = new Date(user.createdAt).toLocaleDateString('fr-FR');
+  document.getElementById('p-watched').textContent  = user.watchedVideos?.length || 0;
+  document.getElementById('p-subjects').textContent = Object.keys(user.progress || {}).length;
+
+  /* ── Progression groupée par année et matière ── */
+  const progressList = document.getElementById('progress-list');
+  const allSubjects  = AppModel.getAllSubjects(); // [{id, name, icon, yearId, ...}]
+  const userProgress = user.progress || {};
+
+  // Grouper par yearId
+  const byYear = {};
+  allSubjects.forEach(s => {
+    if (!byYear[s.yearId]) byYear[s.yearId] = [];
+    byYear[s.yearId].push(s);
+  });
+
+  let html = '';
+  let hasAny = false;
+
+  Object.entries(byYear).forEach(([yearId, subjects]) => {
+    const yearData = AppModel.getYear(yearId);
+    // N'afficher que les matières qui ont une progression OU sur lesquelles l'utilisateur a regardé une vidéo
+    const relevant = subjects.filter(s => {
+      const pct = userProgress[s.id];
+      const videos = AppModel.getVideos(s.id);
+      const watched = videos.some(v => (user.watchedVideos||[]).includes(v.id));
+      return pct !== undefined || watched;
+    });
+
+    if (!relevant.length) return;
+    hasAny = true;
+
+    const yearTotal = relevant.reduce((sum, s) => sum + (userProgress[s.id] || 0), 0);
+    const yearAvg   = Math.round(yearTotal / relevant.length);
+
+    html += `<div class="year-group">
+      <div class="year-group-title">
+        <span>${yearData?.icon || '📂'} ${yearData?.label || 'Niveau ' + yearId}</span>
+        <span class="yg-badge">Moy. ${yearAvg}%</span>
+      </div>`;
+
+    relevant.forEach(s => {
+      const pct = userProgress[s.id] || 0;
+      const videos = AppModel.getVideos(s.id);
+      const watchedCount = videos.filter(v => (user.watchedVideos||[]).includes(v.id)).length;
+
+      html += `<div class="progress-bar-wrap">
+        <div class="progress-bar-label">
+          <span style="display:flex;align-items:center;gap:8px">
+            <span>${s.icon}</span>
+            <span style="font-weight:600">${s.name}</span>
+            <span style="font-size:.75rem;color:var(--text3)">(${watchedCount}/${videos.length} vidéos)</span>
+          </span>
+          <span style="font-weight:700;color:${pct > 0 ? 'var(--accent)' : 'var(--text3)'}">${pct}%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="bar-fill" style="width:${pct}%"></div>
+        </div>
+      </div>`;
+    });
+
+    html += `</div>`;
+  });
+
+  if (!hasAny) {
+    progressList.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📊</div>
+      <h3>Aucune progression</h3>
+      <p>Commencez un cours pour suivre votre avancement.</p>
+      <a href="index.html" class="btn btn-primary" style="margin-top:16px">Commencer</a>
+    </div>`;
+  } else {
+    progressList.innerHTML = html;
+  }
+
+  /* ── Achievements ── */
+  document.getElementById('achievements-grid').innerHTML = ACHIEVEMENTS.map(a => `
+    <div class="achievement ${a.condition(user) ? 'earned' : ''}">
+      <div class="ach-icon">${a.icon}</div>
+      <div class="ach-name">${a.name}</div>
+      <div class="ach-desc">${a.desc}</div>
+      ${a.condition(user) ? '<div style="font-size:.7rem;color:var(--accent);margin-top:4px;font-weight:700">✓ Débloqué</div>' : ''}
+    </div>`).join('');
+
+  /* ── Activité récente ── */
+  const recent = document.getElementById('recent-activity');
+  const allVideos = allSubjects.flatMap(s => AppModel.getVideos(s.id).map(v => ({ ...v, subjectName: s.name, subjectIcon: s.icon, yearId: s.yearId })));
+  const watched   = (user.watchedVideos || []).slice(-8).reverse()
+    .map(id => allVideos.find(v => v.id === id)).filter(Boolean);
+
+  if (!watched.length) {
+    recent.innerHTML = '<p class="text-muted" style="font-size:.9rem">Aucune vidéo regardée récemment.</p>';
+  } else {
+    recent.innerHTML = watched.map(v => {
+      const yearData = AppModel.getYear(v.yearId);
+      return `<div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border)">
+        <div style="width:42px;height:42px;background:var(--accent-dim);border-radius:10px;display:grid;place-items:center;font-size:1.1rem;flex-shrink:0">▶️</div>
+        <div style="flex:1;overflow:hidden">
+          <div style="font-weight:600;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v.title}</div>
+          <div style="font-size:.75rem;color:var(--text3)">${v.subjectIcon} ${v.subjectName} · ${yearData?.label || ''} · ⏱ ${v.duration}</div>
+        </div>
+        <span style="font-size:.73rem;color:var(--success);white-space:nowrap;flex-shrink:0">✓ Vu</span>
+      </div>`;
+    }).join('');
+  }
+});
+</script>
+</body>
+</html>
